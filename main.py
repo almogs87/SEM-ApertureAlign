@@ -3,6 +3,8 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+from scipy.ndimage import median_filter
+
 from PIL import Image
 
 def rgb2gl(img):
@@ -33,48 +35,64 @@ cv2.waitKey(0)
 file_list = os.listdir(images_path)
 
 contrast_vec = np.arange(0)
+contrast_vec_median = np.arange(0)
 
-folder = 'images'
-filename = 'resolution.jpg'
-img = cv2.imread(os.path.join(folder,filename))
-change_contrast = np.arange(0,1,0.05)
+## save different contrast of a given image
+# folder = 'images'
+# filename = 'resolution.jpg'
+# img = cv2.imread(os.path.join(folder,filename))
+# change_contrast = np.arange(0,1,0.05)
+# images_path = 'images/res_contrast'
+# for k in change_contrast:
+#     img_contrast = img*k
+#     img_contrast = img_contrast.astype(np.uint8)
+#     idx = format(k,'.3f')
+#     filename_contrast = str(filename[:-4] + idx + filename[-4:])
+#     cv2.imwrite(os.path.join(images_path,filename_contrast),img_contrast)
+median_size = 3
+images_path = 'images/AA/x'
+file_list = sorted(os.listdir(images_path))
 
-images_path = 'images/res_contrast'
-
-
-for k in change_contrast:
-    img_contrast = img*k
-    img_contrast = img_contrast.astype(np.uint8)
-    idx = format(k,'.3f')
-    filename_contrast = str(filename[:-4] + idx + filename[-4:])
-    cv2.imwrite(os.path.join(images_path,filename_contrast),img_contrast)
-
-
-file_list = os.listdir(images_path)
-
-
+change_contrast = [-5,-2,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30]
 for k in file_list:
     filename = os.path.join(images_path,k)
     img = cv2.imread(filename)
-    print(filename + ' has contrast of ' + str(np.mean(img)))
+    img_median = median_filter(img, size=median_size)
+    score_img = np.std(img)
+    score_img_median = np.std(img_median)
+    contrast_vec = np.append(contrast_vec,score_img)
+    contrast_vec_median = np.append(contrast_vec_median,score_img_median)
 
-    # cv2.imshow(img)
-    contrast_vec = np.append(contrast_vec,np.mean(img))
+    print(filename + ' original std = ' + str(score_img) +', median(' +str(median_size) + ')=' +str(score_img_median) )
 
 
-plt.plot(change_contrast,contrast_vec[:-1],"or")
-plt.xlabel(' % of orignal contrast image ')
-plt.ylabel(" Contrast Value")
-plt.title("changing contrast of resoltion image")
+
+f,axarr = plt.subplots(2,2)
+# plt.plot(change_contrast,contrast_vec,"or")
+
+
+axarr[0][0].plot(change_contrast,contrast_vec,"-or")
+axarr[0][0].set_title("SEM measurements post-processing - original")
+axarr[0][0].set_xlabel(' % of orignal contrast image ')
+axarr[0][0].set_ylabel(" Contrast Value")
+axarr[0][0].grid()
+
+axarr[1][0].plot(change_contrast,contrast_vec_median,"-or")
+axarr[1][0].set_xlabel(' % of orignal contrast image ')
+axarr[1][0].set_ylabel(" std Value - median(20)")
+axarr[1][0].set_title("SEM measurements post-processing - median(20)")
+axarr[1][0].grid()
+
+
 plt.show()
 
 
-# # matplotlib image display
+# matplotlib image display
 # img2 = mpimg.imread(filename)
 # plt.imshow(img2)
-# plt.axis("off")
+# # plt.axis("off")
 # plt.show()
-#
+# #
 # # PIL image display
 # img3 = Image.open(filename)
 # img3.show()
